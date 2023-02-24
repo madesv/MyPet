@@ -39,8 +39,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
-import static org.bukkit.ChatColor.GOLD;
-import static org.bukkit.ChatColor.RESET;
+import static org.bukkit.ChatColor.*;
 
 public class MyPetSelectionGui {
     MyPetPlayer player;
@@ -126,11 +125,8 @@ public class MyPetSelectionGui {
 
                 List<String> lore = new ArrayList<>();
                 lore.add(RESET + Translation.getString("Name.Hunger", player) + ": " + GOLD + Math.round(mypet.getSaturation()));
-                if (mypet.getRespawnTime() > 0) {
-                    lore.add(RESET + Translation.getString("Name.Respawntime", player) + ": " + GOLD + mypet.getRespawnTime() + "sec");
-                } else {
-                    lore.add(RESET + Translation.getString("Name.HP", player) + ": " + GOLD + String.format("%1.2f", mypet.getHealth()));
-                }
+                lore.add(RESET + Translation.getString("Name.HP", player) + ": " + GOLD + String.format("%1.2f", mypet.getHealth()));
+
                 boolean levelFound = false;
                 if (mypet.getInfo().containsKey("storage")) {
                     TagCompound storage = mypet.getInfo().getAs("storage", TagCompound.class);
@@ -147,9 +143,18 @@ public class MyPetSelectionGui {
 
                 IconMenuItem icon = new IconMenuItem();
                 icon.setTitle(RESET + mypet.getPetName());
-                icon.addLore(lore);
-                Optional<EggIconService> egg = MyPetApi.getServiceManager().getService(EggIconService.class);
-                egg.ifPresent(service -> service.updateIcon(mypet.getPetType(), icon));
+
+                if(mypet.getRespawnTime() > 0){
+                    lore.add(RESET + "리스폰: " + GOLD + mypet.getRespawnTime() + "초 후");
+                    icon.addLore(lore);
+                    icon.setMaterial(Material.EGG);
+                }
+                else{
+                    lore.add(RESET + "리스폰: " + GREEN + "소환 가능");
+                    icon.addLore(lore);
+                    Optional<EggIconService> egg = MyPetApi.getServiceManager().getService(EggIconService.class);
+                    egg.ifPresent(service -> service.updateIcon(mypet.getPetType(), icon));
+                }
 
                 int pos = menu.addOption(icon);
                 petSlotList.put(pos, mypet);
@@ -169,7 +174,7 @@ public class MyPetSelectionGui {
                 );
             }
 
-            menu.open(player.getPlayer()); 
+            menu.open(player.getPlayer());
         }
     }
 }
