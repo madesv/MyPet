@@ -49,9 +49,6 @@ import static org.bukkit.Material.*;
 public class BeaconImpl implements Beacon {
 
     SkullMeta disabledMeta = new SkullMeta();
-    SkullMeta partyMeta = new SkullMeta();
-    SkullMeta everyoneMeta = new SkullMeta();
-    org.bukkit.inventory.meta.SkullMeta ownerMeta;
 
     protected UpgradeComputer<Integer> duration = new UpgradeComputer<>(0);
     protected UpgradeComputer<Number> range = new UpgradeComputer<>(0);
@@ -73,14 +70,8 @@ public class BeaconImpl implements Beacon {
             disabledMeta.setOwner("NeverUsed0000001");
             disabledMeta.setTexture("http://textures.minecraft.net/texture/de9b8aae7f9cc76d625ccb8abc686f30d38f9e6c42533098b9ad577f91c333c");
             // globe
-            everyoneMeta.setOwner("NeverUsed0000002");
-            everyoneMeta.setTexture("http://textures.minecraft.net/texture/b1dd4fe4a429abd665dfdb3e21321d6efa6a6b5e7b956db9c5d59c9efab25");
             // beachball
-            partyMeta.setOwner("NeverUsed0000003");
-            partyMeta.setTexture("http://textures.minecraft.net/texture/5a5ab05ea254c32e3c48f3fdcf9fd9d77d3cba04e6b5ec2e68b3cbdcfac3fd");
             // owner skin
-            ownerMeta = (org.bukkit.inventory.meta.SkullMeta) new ItemStack(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD")).getItemMeta();
-            ownerMeta.setOwner(myPet.getOwner().getName());
         }
 
         for (Buff buff : Buff.values()) {
@@ -195,37 +186,6 @@ public class BeaconImpl implements Beacon {
                         event.setWillClose(true);
                         event.setWillDestroy(true);
                         break;
-                    case 21:
-                        if (receiver != BuffReceiver.Owner) {
-                            menu.getOption(21).setMeta(ownerMeta, false, false);
-                            if (menu.getOption(22) != null) {
-                                menu.getOption(22).setMeta(partyMeta);
-                            }
-                            menu.getOption(23).setMeta(disabledMeta);
-                            receiver = BuffReceiver.Owner;
-                            menu.update();
-                        }
-                        break;
-                    case 22:
-                        if (receiver != BuffReceiver.Party) {
-                            menu.getOption(21).setMeta(disabledMeta);
-                            menu.getOption(22).setMeta(partyMeta);
-                            menu.getOption(23).setMeta(disabledMeta);
-                            receiver = BuffReceiver.Party;
-                            menu.update();
-                        }
-                        break;
-                    case 23:
-                        if (receiver != BuffReceiver.Everyone) {
-                            menu.getOption(21).setMeta(disabledMeta);
-                            if (menu.getOption(22) != null) {
-                                menu.getOption(22).setMeta(disabledMeta);
-                            }
-                            menu.getOption(23).setMeta(everyoneMeta);
-                            receiver = BuffReceiver.Everyone;
-                            menu.update();
-                        }
-                        break;
                     default:
                         Buff selectedBuff = Buff.getBuffAtPosition(event.getPosition());
                         if (selectedBuff != null) {
@@ -314,47 +274,6 @@ public class BeaconImpl implements Beacon {
                 .setData(14)
                 .setTitle(RED + Translation.getString("Name.Cancel", myPet.getOwner())));
 
-        if (receiver == BuffReceiver.Owner) {
-            menu.setOption(21, new IconMenuItem()
-                    .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                    .setData(3)
-                    .setTitle(GOLD + Translation.getString("Name.Owner", myPet.getOwner()))
-                    .setMeta(ownerMeta, false, false));
-        } else {
-            menu.setOption(21, new IconMenuItem()
-                    .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                    .setData(3)
-                    .setTitle(GOLD + Translation.getString("Name.Owner", myPet.getOwner()))
-                    .setMeta(disabledMeta));
-        }
-        if (Configuration.Skilltree.Skill.Beacon.PARTY_SUPPORT && MyPetApi.getHookHelper().isInParty(getMyPet().getOwner().getPlayer())) {
-            if (receiver != BuffReceiver.Party) {
-                menu.setOption(22, new IconMenuItem()
-                        .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                        .setData(3)
-                        .setTitle(GOLD + Translation.getString("Name.Party", myPet.getOwner()))
-                        .setMeta(partyMeta));
-            } else {
-                menu.setOption(22, new IconMenuItem()
-                        .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                        .setData(3)
-                        .setTitle(GOLD + Translation.getString("Name.Party", myPet.getOwner()))
-                        .setMeta(disabledMeta));
-            }
-        }
-        if (receiver == BuffReceiver.Everyone) {
-            menu.setOption(23, new IconMenuItem()
-                    .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                    .setData(3)
-                    .setTitle(GOLD + Translation.getString("Name.Everyone", myPet.getOwner()))
-                    .setMeta(everyoneMeta));
-        } else {
-            menu.setOption(23, new IconMenuItem()
-                    .setMaterial(EnumSelector.find(Material.class, "SKULL_ITEM", "PLAYER_HEAD"))
-                    .setData(3)
-                    .setTitle(GOLD + Translation.getString("Name.Everyone", myPet.getOwner()))
-                    .setMeta(disabledMeta));
-        }
 
         if (getBuffLevel(Buff.Speed) > 0) {
             menu.setOption(0, new IconMenuItem()
@@ -538,43 +457,16 @@ public class BeaconImpl implements Beacon {
                 } else if (MyPetApi.getHookHelper().isVanished(player)) {
                     continue;
                 }
-
-                switch (receiver) {
-                    case Owner:
-                        if (!myPet.getOwner().equals(player)) {
-                            continue targetLoop;
-                        } else {
-                            for (PotionEffect effect : potionEffects) {
-                                player.addPotionEffect(effect, true);
-                            }
-                            if (!player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-                                MyPetApi.getPlatformHelper().playParticleEffect(player.getLocation().add(0, 1, 0), ParticleCompat.SPELL_INSTANT.get(), 0.2F, 0.2F, 0.2F, 0.1F, 5, 20);
-                            }
-                            break targetLoop;
-                        }
-                    case Everyone:
-                        for (PotionEffect effect : potionEffects) {
-                            player.addPotionEffect(effect, true);
-                        }
-                        if (!player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-                            MyPetApi.getPlatformHelper().playParticleEffect(player.getLocation().add(0, 1, 0), ParticleCompat.SPELL_INSTANT.get(), 0.2F, 0.2F, 0.2F, 0.1F, 5, 20);
-                        }
-                        break;
-                    case Party:
-                        if (Configuration.Skilltree.Skill.Beacon.PARTY_SUPPORT && members != null) {
-                            if (members.contains(player)) {
-                                for (PotionEffect effect : potionEffects) {
-                                    player.addPotionEffect(effect, true);
-                                }
-                                if (!player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-                                    MyPetApi.getPlatformHelper().playParticleEffect(player.getLocation().add(0, 1, 0), ParticleCompat.SPELL_INSTANT.get(), 0.2F, 0.2F, 0.2F, 0.1F, 5, 20);
-                                }
-                            }
-                            break;
-                        } else {
-                            receiver = BuffReceiver.Owner;
-                            break targetLoop;
-                        }
+                if (!myPet.getOwner().equals(player)) {
+                    continue targetLoop;
+                } else {
+                    for (PotionEffect effect : potionEffects) {
+                        player.addPotionEffect(effect, true);
+                    }
+                    if (!player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+                        MyPetApi.getPlatformHelper().playParticleEffect(player.getLocation().add(0, 1, 0), ParticleCompat.SPELL_INSTANT.get(), 0.2F, 0.2F, 0.2F, 0.1F, 5, 20);
+                    }
+                    break targetLoop;
                 }
             }
 
